@@ -1,0 +1,22 @@
+# Pacote de validacao — versao fixada.
+#
+# Este arquivo e a unica declaracao de qual criterio julga os contratos deste
+# repositorio. O pipeline le daqui, e quem roda a verificacao na propria maquina
+# le daqui tambem: se fossem dois lugares, o CI e o dev discordariam no dia em
+# que um dos dois subisse de versao.
+#
+# **Versao E sha256.** So a versao nao basta — uma tag pode ser movida, e no dia
+# em que for, o mesmo contrato passa a ser julgado por outro criterio sem que
+# nada aqui tenha mudado. O sha256 e publicado nas notas do release.
+#
+# O pacote traz o binario **e** o vocabulario (glossario e catalogo LGPD). Por
+# isso subir de versao pode mudar a classificacao de um campo sem que nenhum
+# contrato mude — e por isso subir de versao e um pull request, revisado como
+# qualquer outro, e nao um efeito de alguem ter publicado algo em outro lugar.
+#
+# Formato: KEY=valor, sem espacos. E lido por `sh` e despejado no ambiente do
+# job; qualquer coisa mais elaborada exigiria um parser dos dois lados.
+
+HARNESS_REPO=andrelaf/harness-odcs
+HARNESS_VERSAO=v0.1.0
+HARNESS_SHA256=PREENCHER-APOS-O-PRIMEIRO-RELEASE
