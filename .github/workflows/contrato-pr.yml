@@ -178,15 +178,13 @@ jobs:
 
           git config user.name  "contrato[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git commit -m "chore: laudo de classificacao emitido pela esteira
-
-Gerado por \`harness aplicar\` no pacote fixado em harness.lock, e nao na
-maquina de quem escreveu o contrato: o que este documento afirma nao depende
-do que estava instalado em lugar nenhum.
-
-Este commit precede a revisao de proposito. Emitido depois dela, derrubaria a
-aprovacao recem-dada e o mesmo conteudo exigiria duas — assim quem aprova ve,
-de uma vez, exatamente o que vai entrar."
+          # Um `-m` por paragrafo. Uma string multilinha aqui teria de ser
+          # indentada dentro do bloco `run:`, e a indentacao entraria na
+          # mensagem — ou, sem indentar, quebra o proprio YAML.
+          git commit \
+            -m "chore: laudo de classificacao emitido pela esteira" \
+            -m "Gerado por \`harness aplicar\` no pacote fixado em harness.lock, e nao na maquina de quem escreveu o contrato: o que este documento afirma nao depende do que estava instalado em lugar nenhum." \
+            -m "Este commit precede a revisao de proposito. Emitido depois dela, derrubaria a aprovacao recem-dada e o mesmo conteudo exigiria duas aprovacoes — assim quem aprova ve, de uma vez, exatamente o que vai entrar."
           git push origin "HEAD:${{ github.head_ref }}"
           echo "emitiu=sim" >> "$GITHUB_OUTPUT"
 
