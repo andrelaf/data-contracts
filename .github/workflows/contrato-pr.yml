@@ -23,8 +23,25 @@ on:
       - 'contracts/**'
       - '.github/workflows/contrato-pr.yml'
 
+# `contents: write` porque **o laudo e emitido aqui**, e nao na maquina de quem
+# escreve o contrato.
+#
+# Quem redige o contrato mexe no YAML e mais nada: nao precisa de Docker, nao
+# precisa do pacote de validacao, nao emite documento de governanca. O laudo
+# nasce sempre no ambiente controlado, com a versao fixada em `harness.lock` —
+# o que ele afirma nao depende do que estava instalado na maquina de ninguem.
+#
+# A escrita e estreita, e a esteira nao escolhe o que grava: ela roda `aplicar`,
+# que so escreve o contrato enriquecido e os arquivos em `laudos/`, e commita na
+# branch do pull request. Na `main` ela nao consegue empurrar — a branch
+# protection exige revisao, e um job nao e revisor.
+#
+# O commit acontece **antes** da aprovacao, de proposito. Depois dela, o push
+# derrubaria a revisao que acabou de ser dada (`dismiss stale approvals`), e
+# todo pull request passaria a exigir duas aprovacoes para o mesmo conteudo.
+# Assim o revisor aprova uma vez, olhando exatamente o que vai entrar.
 permissions:
-  contents: read
+  contents: write
   pull-requests: write
 
 concurrency:
@@ -35,7 +52,11 @@ jobs:
   check:
     runs-on: ubuntu-latest
     steps:
+      # `ref` explicito: o padrao do evento `pull_request` e o merge commit, que
+      # e desanexado. Para commitar de volta e preciso estar **na branch**.
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
 
       # Qual criterio julga este repositorio — repo, versao e sha256. Vive em
       # `harness.lock` e nao neste YAML porque quem roda a verificacao na
@@ -120,6 +141,76 @@ jobs:
             --formato github --saida "$RUNNER_TEMP/report.json"
           echo "codigo=$?" >> "$GITHUB_OUTPUT"
 
+      # --- 4. Emitir o laudo -------------------------------------------------
+      #
+      # Este e o passo que faz o laudo ser um documento **da esteira**, e nao da
+      # maquina de quem escreveu o contrato. Ele so tem trabalho quando o
+      # relatorio acusa pendencia de aplicacao — o `aplicar` e idempotente, mas
+      # custa uma partida de container, e chamar a toa dobraria o custo do job
+      # em todo push que nao mexe em classificacao.
+      #
+      # Reprovacao real (lint, nome, composicao) **nao** chega aqui: nesse caso
+      # nao ha proposta valida a emitir, e quem corrige e quem abriu o pull
+      # request, com um commit novo.
+      - name: emitir o laudo
+        id: laudo
+        if: steps.check.outputs.codigo == '1' || steps.check.outputs.codigo == '5' || steps.check.outputs.codigo == '0'
+        run: |
+          pendente=$(jq -r '[.defeitos[] | select(.etapa == "aplicacao")] | length' \
+            "$RUNNER_TEMP/report.json")
+          if [ "$pendente" = "0" ]; then
+            echo "laudo ja emitido para este conteudo — nada a fazer"
+            echo "emitiu=nao" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          "$RUNNER_TEMP/harness-odcs/harness.sh" aplicar
+
+          # `git add` restrito: o que a esteira pode gravar sao contratos e
+          # laudos, e nada mais. Um `add -A` aqui transformaria qualquer arquivo
+          # que aparecesse no runner em commit no repositorio de alguem.
+          git add contracts/
+          if git diff --cached --quiet; then
+            echo "nada mudou no repositorio"
+            echo "emitiu=nao" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          git config user.name  "contrato[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          # Um `-m` por paragrafo. Uma string multilinha aqui teria de ser
+          # indentada dentro do bloco `run:`, e a indentacao entraria na
+          # mensagem — ou, sem indentar, quebra o proprio YAML.
+          git commit \
+            -m "chore: laudo de classificacao emitido pela esteira" \
+            -m "Gerado por \`harness aplicar\` no pacote fixado em harness.lock, e nao na maquina de quem escreveu o contrato: o que este documento afirma nao depende do que estava instalado em lugar nenhum." \
+            -m "Este commit precede a revisao de proposito. Emitido depois dela, derrubaria a aprovacao recem-dada e o mesmo conteudo exigiria duas aprovacoes — assim quem aprova ve, de uma vez, exatamente o que vai entrar."
+          git push origin "HEAD:${{ github.head_ref }}"
+          echo "emitiu=sim" >> "$GITHUB_OUTPUT"
+
+      # --- 5. Reverificar o que a esteira acabou de escrever -----------------
+      #
+      # **Um push feito com o `GITHUB_TOKEN` nao dispara workflow.** E uma
+      # protecao do GitHub contra recursao infinita, e esta certa — mas derruba
+      # a suposicao de que "o commit novo sera verificado pela execucao
+      # seguinte": essa execucao nao acontece.
+      #
+      # Sem este passo, o status check do pull request ficaria verde apoiado no
+      # relatorio **anterior** a emissao, e o que a esteira gravou nunca teria
+      # sido conferido por ninguem. Verde por ausencia de verificacao e pior que
+      # vermelho.
+      #
+      # Entao a verificacao acontece aqui, no mesmo job, sobre o que ficou no
+      # disco — e e este relatorio que vira comentario e veredito.
+      - name: verificar o que foi emitido
+        id: recheck
+        if: steps.laudo.outputs.emitiu == 'sim'
+        run: |
+          set +e
+          "$RUNNER_TEMP/harness-odcs/harness.sh" check \
+            --formato github --saida "$RUNNER_TEMP/report.json"
+          echo "codigo=$?" >> "$GITHUB_OUTPUT"
+
       # `always()` para que reprovacao de contrato tambem seja comentada — mas
       # so ha o que desenhar se a verificacao chegou a rodar. Quando ela nao
       # chega (falha de ambiente, pacote errado), estes passos ficavam vermelhos
@@ -135,6 +226,9 @@ jobs:
           "$RUNNER_TEMP/harness-odcs/harness.sh" report "$RUNNER_TEMP/report.json" \
             --formato markdown >> "$GITHUB_STEP_SUMMARY"
 
+      # O `report.json` aqui ja e o da reverificacao, quando houve emissao: o
+      # passo anterior sobrescreve o arquivo. O comentario descreve o que esta
+      # no pull request agora, e nao o que estava antes de a esteira escrever.
       - name: comentar no pull request
         if: always()
         env:
@@ -150,9 +244,9 @@ jobs:
           gh pr comment "$PR" --body-file "$RUNNER_TEMP/comentario.md" --edit-last \
             || gh pr comment "$PR" --body-file "$RUNNER_TEMP/comentario.md"
 
-      # O contrato enriquecido e o laudo propostos, mais o rastro. Aqui eles sao
-      # **artefato**, e nao commit: o laudo entra no repositorio quando quem
-      # abriu o PR aceitar a proposta, no mesmo commit que a revisao aprova.
+      # O rastro da execucao. O laudo **nao** esta aqui: ele foi commitado, e e
+      # por isso que existe. O que sobe como artefato e o que e regeneravel —
+      # saida bruta das ferramentas, com retencao propria.
       - name: artefatos
         if: always()
         uses: actions/upload-artifact@v4
@@ -167,8 +261,17 @@ jobs:
       # decisao humana. Quem segura o merge e a revisao de CODEOWNER.
       - name: veredito
         run: |
-          case "${{ steps.check.outputs.codigo }}" in
+          # Houve emissao? Entao quem responde e a reverificacao, feita sobre o
+          # que a esteira gravou. O codigo da primeira passagem descrevia um
+          # repositorio que ja nao existe.
+          codigo="${{ steps.check.outputs.codigo }}"
+          if [ "${{ steps.laudo.outputs.emitiu }}" = "sim" ]; then
+            codigo="${{ steps.recheck.outputs.codigo }}"
+            echo "::notice::laudo emitido e commitado nesta branch pela esteira"
+          fi
+
+          case "$codigo" in
             0) echo "contrato aprovado na verificacao automatica" ;;
             5) echo "::notice::aguardando decisao humana — o merge fica com a revisao de CODEOWNER" ;;
-            *) echo "::error::verificacao reprovou (exit ${{ steps.check.outputs.codigo }})"; exit 1 ;;
+            *) echo "::error::verificacao reprovou (exit $codigo)"; exit 1 ;;
           esac
