@@ -40,6 +40,7 @@ revisão para quem responde por aquele dado.
 ```bash
 ./scripts/preparar.sh      # baixa o pacote fixado (idempotente)
 ./scripts/verificar.sh     # o mesmo veredito que o pull request vai dar
+./scripts/aplicar.sh       # escreve o contrato classificado, o laudo e os anexos
 ```
 
 Requisitos: Docker e `gh` autenticado. **Não** requer Rust — o binário vem
@@ -53,8 +54,23 @@ O exit code é o veredito:
 | `1` | reprovou — o motivo sai ancorado no arquivo |
 | `5` | bloqueado, aguardando decisão humana — não é erro seu |
 
-Nada é escrito no contrato. O contrato enriquecido e o laudo saem **propostos**
-em `evidence/`, e entram no repositório quando você aceitar a proposta.
+`verificar.sh` não escreve nada. Quem escreve é `aplicar.sh`, e ele produz quatro
+arquivos que **entram no mesmo commit** que a mudança do contrato:
+
+| Arquivo | Para quem |
+|---|---|
+| `contract.odcs.yaml` | ganha `classification` por campo |
+| `laudos/<v>-<sha>-<criterio>.md` | quem revisa e quem audita |
+| `laudos/<v>-<sha>-<criterio>.proposta.json` | consulta automatizada |
+| `laudos/<v>-<sha>-<criterio>.lint.json` | prova de validade ODCS |
+
+O nome carrega contrato **e** critério: subir o glossário ou o catálogo emite um
+laudo novo ao lado, nunca por cima. Duas constatações sobre o mesmo contrato são
+duas constatações, e é exatamente esse par que a auditoria quer comparar.
+
+**O pipeline nunca escreve.** Ele confere que o repositório contém o que ele
+proporia, e reprova quando não contém — um laudo que só existiu no comentário de
+um pull request não serve a auditoria nenhuma.
 
 ## O ciclo
 

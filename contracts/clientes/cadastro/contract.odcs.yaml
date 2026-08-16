@@ -16,6 +16,12 @@ schema:
     logicalType: string
     description: Telefone de contato do cliente, com DDD.
     required: false
+    classification: confidential
+    tags:
+    - pii
+    authoritativeDefinitions:
+    - url: glossary/glossario.yaml#contato.telefone
+      type: businessDefinition
   - name: id_cliente
     logicalType: string
     description: Identificador interno pseudonimizado do cliente.
