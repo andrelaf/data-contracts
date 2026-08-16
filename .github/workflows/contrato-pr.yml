@@ -41,10 +41,19 @@ jobs:
       # `harness.lock` e nao neste YAML porque quem roda a verificacao na
       # propria maquina le o mesmo arquivo. Duas declaracoes divergiriam no dia
       # em que uma das duas subisse de versao.
-      - name: ler a versao fixada
-        run: grep -E '^[A-Z_]+=' harness.lock >> "$GITHUB_ENV"
-
       # --- 1. A ferramenta ---------------------------------------------------
+      #
+      # `. ./harness.lock` em cada passo que precisa do pin, e nao um filtro
+      # para `$GITHUB_ENV`. A primeira versao filtrava com `grep -E '^[A-Z_]+='`
+      # e **descartava em silencio** a linha `HARNESS_SHA256=` — `[A-Z_]` nao
+      # inclui digito, e o nome da variavel tem `256`. O download funcionava, a
+      # conferencia recebia um hash vazio, e o erro falava de formato de
+      # checksum: tres passos de distancia da causa.
+      #
+      # O arquivo ja e `sh` valido e o script local dele (`scripts/preparar.sh`)
+      # sempre o carregou assim. Ler o mesmo arquivo de duas maneiras diferentes
+      # era a divergencia entre CI e maquina de dev que o pin existe para
+      # impedir.
       #
       # `gh release download` em vez de `curl`: funciona igual em repositorio
       # privado, que e onde isto vai acabar morando.
@@ -52,6 +61,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          . ./harness.lock
           gh release download "$HARNESS_VERSAO" \
             --repo "$HARNESS_REPO" \
             --pattern 'harness-odcs-linux-x64.tar.gz' \
@@ -59,10 +69,26 @@ jobs:
 
       # A verificacao que da sentido ao "fixado". Sem ela, `HARNESS_VERSAO`
       # seria uma etiqueta, e etiqueta se move.
+      #
+      # Comparacao explicita em vez de `sha256sum --check`: quando reprova, o
+      # que interessa e **quais** sao os dois valores. `--check` responde
+      # "FAILED" e deixa quem le o log adivinhar se o pacote mudou ou se o pin
+      # esta errado.
       - name: conferir o sha256
         run: |
-          echo "$HARNESS_SHA256  $RUNNER_TEMP/harness-odcs-linux-x64.tar.gz" \
-            | sha256sum --check --strict
+          . ./harness.lock
+          [ -n "$HARNESS_SHA256" ] || {
+            echo "::error::HARNESS_SHA256 vazio ou ausente em harness.lock"
+            exit 1
+          }
+          obtido="$(sha256sum "$RUNNER_TEMP/harness-odcs-linux-x64.tar.gz" | cut -d' ' -f1)"
+          if [ "$obtido" != "$HARNESS_SHA256" ]; then
+            echo "::error::o pacote baixado nao e o fixado em harness.lock"
+            echo "  esperado : $HARNESS_SHA256"
+            echo "  obtido   : $obtido"
+            exit 1
+          fi
+          echo "sha256 confere: $obtido"
 
       - name: extrair
         run: tar -C "$RUNNER_TEMP" -xzf "$RUNNER_TEMP/harness-odcs-linux-x64.tar.gz"
@@ -94,9 +120,18 @@ jobs:
             --formato github --saida "$RUNNER_TEMP/report.json"
           echo "codigo=$?" >> "$GITHUB_OUTPUT"
 
+      # `always()` para que reprovacao de contrato tambem seja comentada — mas
+      # so ha o que desenhar se a verificacao chegou a rodar. Quando ela nao
+      # chega (falha de ambiente, pacote errado), estes passos ficavam vermelhos
+      # tambem, e o log passava a ter tres falhas para uma causa. A primeira e a
+      # unica que interessa.
       - name: resumo do job
         if: always()
         run: |
+          [ -f "$RUNNER_TEMP/report.json" ] || {
+            echo "sem relatorio — a verificacao nao chegou a rodar" >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          }
           "$RUNNER_TEMP/harness-odcs/harness.sh" report "$RUNNER_TEMP/report.json" \
             --formato markdown >> "$GITHUB_STEP_SUMMARY"
 
@@ -106,6 +141,10 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           PR: ${{ github.event.pull_request.number }}
         run: |
+          [ -f "$RUNNER_TEMP/report.json" ] || {
+            echo "sem relatorio — nada a comentar"
+            exit 0
+          }
           "$RUNNER_TEMP/harness-odcs/harness.sh" report "$RUNNER_TEMP/report.json" \
             --formato markdown > "$RUNNER_TEMP/comentario.md"
           gh pr comment "$PR" --body-file "$RUNNER_TEMP/comentario.md" --edit-last \
