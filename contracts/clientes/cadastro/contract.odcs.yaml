@@ -12,6 +12,10 @@ schema:
 - name: clientes
   description: Cadastro de clientes.
   properties:
+  - name: telefone
+    logicalType: string
+    description: Telefone de contato do cliente, com DDD.
+    required: false
   - name: id_cliente
     logicalType: string
     description: Identificador interno pseudonimizado do cliente.
