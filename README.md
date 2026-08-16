@@ -40,8 +40,10 @@ revisão para quem responde por aquele dado.
 ```bash
 ./scripts/preparar.sh      # baixa o pacote fixado (idempotente)
 ./scripts/verificar.sh     # o mesmo veredito que o pull request vai dar
-./scripts/aplicar.sh       # escreve o contrato classificado, o laudo e os anexos
 ```
+
+**Opcional.** Você não precisa de nada disso para abrir um PR — escreva o YAML e
+empurre. Serve só para antecipar o veredito e encurtar o ciclo.
 
 Requisitos: Docker e `gh` autenticado. **Não** requer Rust — o binário vem
 pronto no pacote.
@@ -54,23 +56,29 @@ O exit code é o veredito:
 | `1` | reprovou — o motivo sai ancorado no arquivo |
 | `5` | bloqueado, aguardando decisão humana — não é erro seu |
 
-`verificar.sh` não escreve nada. Quem escreve é `aplicar.sh`, e ele produz quatro
-arquivos que **entram no mesmo commit** que a mudança do contrato:
+**Quem emite o laudo é a esteira, não você.** Ao abrir o PR, ela roda a
+verificação, emite os documentos e os commita na sua branch — antes da revisão,
+para que quem aprova veja de uma vez exatamente o que vai entrar.
+
+Isso é deliberado: o laudo é documento de governança, e o que ele afirma não pode
+depender do que estava instalado na máquina de quem escreveu o contrato. Ele
+nasce sempre no mesmo ambiente, com a versão fixada em `harness.lock`.
+
+O que chega ao repositório:
 
 | Arquivo | Para quem |
 |---|---|
 | `contract.odcs.yaml` | ganha `classification` por campo |
 | `laudos/<v>-<sha>-<criterio>.md` | quem revisa e quem audita |
+| `laudos/<v>-<sha>-<criterio>.html` | quem decide sobre o dado e não lê YAML |
 | `laudos/<v>-<sha>-<criterio>.proposta.json` | consulta automatizada |
-| `laudos/<v>-<sha>-<criterio>.lint.json` | prova de validade ODCS |
 
 O nome carrega contrato **e** critério: subir o glossário ou o catálogo emite um
 laudo novo ao lado, nunca por cima. Duas constatações sobre o mesmo contrato são
 duas constatações, e é exatamente esse par que a auditoria quer comparar.
 
-**O pipeline nunca escreve.** Ele confere que o repositório contém o que ele
-proporia, e reprova quando não contém — um laudo que só existiu no comentário de
-um pull request não serve a auditoria nenhuma.
+Se a verificação reprovar (`exit 1`), nada é emitido: não há proposta válida a
+registrar. O status fica vermelho e quem abriu o PR corrige com um commit novo.
 
 ## O ciclo
 
