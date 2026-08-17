@@ -18,5 +18,5 @@
 # job; qualquer coisa mais elaborada exigiria um parser dos dois lados.
 
 HARNESS_REPO=andrelaf/harness-odcs
-HARNESS_VERSAO=v0.4.0
-HARNESS_SHA256=a07238121c8f1b1e7120f23ffa41e32d390bcbeeb821013fcd1406041e14ebd1
+HARNESS_VERSAO=v0.5.0
+HARNESS_SHA256=c93a799097885158126996b55eb1e1de492f755f2882934c0a7bc4ecc392193a
