@@ -2843,7 +2843,15 @@ physicalType: objectId"
           
 
           
-
+            
+            <span class="inline-flex items-center gap-1 rounded-md bg-blue-50 px-1 py-1 text-xs font-medium text-blue-700 ring-1 ring-inset ring-blue-700/10">
+              
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" style="width:12px;height:12px;display:inline-block">
+                  <path d="M12 1.5a4.5 4.5 0 00-4.5 4.5V9H6a2.25 2.25 0 00-2.25 2.25v8.25A2.25 2.25 0 006 21.75h12a2.25 2.25 0 002.25-2.25v-8.25A2.25 2.25 0 0018 9h-1.5V6A4.5 4.5 0 0012 1.5zm-3 7.5V6a3 3 0 116 0v3H9z"></path>
+                </svg>
+              
+              restricted
+            </span>
           
 
           
@@ -2852,6 +2860,14 @@ physicalType: objectId"
 
           
 
+          
+
+          
+            
+              <span class="inline-flex items-center rounded-md bg-indigo-50 px-1 py-1 text-xs font-medium text-indigo-700 ring-1 ring-inset ring-indigo-700/10">
+                pii
+              </span>
+            
           
 
           
@@ -2935,7 +2951,15 @@ physicalType: objectId"
           
 
           
-
+            
+            <span class="inline-flex items-center gap-1 rounded-md bg-blue-50 px-1 py-1 text-xs font-medium text-blue-700 ring-1 ring-inset ring-blue-700/10">
+              
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" style="width:12px;height:12px;display:inline-block">
+                  <path d="M12 1.5a4.5 4.5 0 00-4.5 4.5V9H6a2.25 2.25 0 00-2.25 2.25v8.25A2.25 2.25 0 006 21.75h12a2.25 2.25 0 002.25-2.25v-8.25A2.25 2.25 0 0018 9h-1.5V6A4.5 4.5 0 0012 1.5zm-3 7.5V6a3 3 0 116 0v3H9z"></path>
+                </svg>
+              
+              confidential
+            </span>
           
 
           
@@ -2944,6 +2968,14 @@ physicalType: objectId"
 
           
 
+          
+
+          
+            
+              <span class="inline-flex items-center rounded-md bg-indigo-50 px-1 py-1 text-xs font-medium text-indigo-700 ring-1 ring-inset ring-indigo-700/10">
+                pii
+              </span>
+            
           
 
           
@@ -3025,7 +3057,15 @@ physicalType: objectId"
           
 
           
-
+            
+            <span class="inline-flex items-center gap-1 rounded-md bg-blue-50 px-1 py-1 text-xs font-medium text-blue-700 ring-1 ring-inset ring-blue-700/10">
+              
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" style="width:12px;height:12px;display:inline-block">
+                  <path d="M12 1.5a4.5 4.5 0 00-4.5 4.5V9H6a2.25 2.25 0 00-2.25 2.25v8.25A2.25 2.25 0 006 21.75h12a2.25 2.25 0 002.25-2.25v-8.25A2.25 2.25 0 0018 9h-1.5V6A4.5 4.5 0 0012 1.5zm-3 7.5V6a3 3 0 116 0v3H9z"></path>
+                </svg>
+              
+              confidential
+            </span>
           
 
           
@@ -3034,6 +3074,14 @@ physicalType: objectId"
 
           
 
+          
+
+          
+            
+              <span class="inline-flex items-center rounded-md bg-indigo-50 px-1 py-1 text-xs font-medium text-indigo-700 ring-1 ring-inset ring-indigo-700/10">
+                pii
+              </span>
+            
           
 
           
@@ -3193,7 +3241,7 @@ physicalType: objectId"
         </div>
       </div>
       <div class="mt-6 text-sm text-gray-400">
-        Gerado do contrato sha256 39789b1046040ee5 with <a href="https://cli.datacontract.com" class="text-gray-400 hover:text-gray-500">Data Contract CLI</a> v1.1.0
+        Gerado do contrato sha256 19e01791626c9211 with <a href="https://cli.datacontract.com" class="text-gray-400 hover:text-gray-500">Data Contract CLI</a> v1.1.0
       </div>
     </div>
   </main>
@@ -3255,16 +3303,34 @@ schema:
     properties:
     - name: cpf
       description: CPF do cliente.
+      authoritativeDefinitions:
+      - url: glossary/glossario.yaml#pessoa.cpf
+        type: businessDefinition
+      tags:
+      - pii
       logicalType: string
       required: true
+      classification: restricted
     - name: nome_completo
       description: Nome civil do cliente.
+      authoritativeDefinitions:
+      - url: glossary/glossario.yaml#pessoa.nome_completo
+        type: businessDefinition
+      tags:
+      - pii
       logicalType: string
       required: true
+      classification: confidential
     - name: email
       description: Endereco de e-mail do cliente.
+      authoritativeDefinitions:
+      - url: glossary/glossario.yaml#contato.email
+        type: businessDefinition
+      tags:
+      - pii
       logicalType: string
       required: false
+      classification: confidential
   - name: entregas
     description: Tentativas de entrega do pedido.
     logicalType: array
@@ -3273,7 +3339,13 @@ schema:
       properties:
       - name: cep
         description: CEP do endereco de entrega.
+        authoritativeDefinitions:
+        - url: glossary/glossario.yaml#endereco.cep
+          type: businessDefinition
+        tags:
+        - pii
         logicalType: string
+        classification: confidential
       - name: data_nascimento_recebedor
         description: Data de nascimento de quem recebeu, coletada na entrega.
         logicalType: date
