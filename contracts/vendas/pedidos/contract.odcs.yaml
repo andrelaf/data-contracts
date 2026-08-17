@@ -20,18 +20,14 @@ schema:
     description: Identificador do documento, gerado pelo MongoDB.
     required: true
     unique: true
-
   - name: data_pedido
     logicalType: date
     description: Momento em que o pedido foi criado.
     required: true
-
   - name: valor_total
     logicalType: number
     description: Valor total do pedido em reais.
     required: true
-
-  # --- O documento aninhado: e aqui que mora o dado pessoal ------------------
   - name: cliente
     logicalType: object
     description: Dados do cliente, embutidos no documento do pedido — padrao comum em MongoDB para evitar join.
@@ -41,18 +37,14 @@ schema:
       logicalType: string
       description: CPF do cliente.
       required: true
-
     - name: nome_completo
       logicalType: string
       description: Nome civil do cliente.
       required: true
-
     - name: email
       logicalType: string
       description: Endereco de e-mail do cliente.
       required: false
-
-  # --- Um array de documentos ------------------------------------------------
   - name: entregas
     logicalType: array
     description: Tentativas de entrega do pedido.
