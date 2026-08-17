@@ -37,14 +37,32 @@ schema:
       logicalType: string
       description: CPF do cliente.
       required: true
+      classification: restricted
+      tags:
+      - pii
+      authoritativeDefinitions:
+      - url: glossary/glossario.yaml#pessoa.cpf
+        type: businessDefinition
     - name: nome_completo
       logicalType: string
       description: Nome civil do cliente.
       required: true
+      classification: confidential
+      tags:
+      - pii
+      authoritativeDefinitions:
+      - url: glossary/glossario.yaml#pessoa.nome_completo
+        type: businessDefinition
     - name: email
       logicalType: string
       description: Endereco de e-mail do cliente.
       required: false
+      classification: confidential
+      tags:
+      - pii
+      authoritativeDefinitions:
+      - url: glossary/glossario.yaml#contato.email
+        type: businessDefinition
   - name: entregas
     logicalType: array
     description: Tentativas de entrega do pedido.
@@ -54,6 +72,12 @@ schema:
       - name: cep
         logicalType: string
         description: CEP do endereco de entrega.
+        classification: confidential
+        tags:
+        - pii
+        authoritativeDefinitions:
+        - url: glossary/glossario.yaml#endereco.cep
+          type: businessDefinition
       - name: data_nascimento_recebedor
         logicalType: date
         description: Data de nascimento de quem recebeu, coletada na entrega.
