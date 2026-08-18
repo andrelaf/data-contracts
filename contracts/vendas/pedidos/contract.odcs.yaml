@@ -37,7 +37,7 @@ schema:
       logicalType: string
       description: CPF do cliente.
       required: true
-      classification: restricted
+      classification: internal
       tags:
       - pii
       authoritativeDefinitions:
