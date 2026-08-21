@@ -1,4 +1,4 @@
-# Pacote de validacao — versao fixada.
+# Pacotes de validacao — versoes fixadas.
 #
 # Este arquivo e a unica declaracao de qual criterio julga os contratos deste
 # repositorio. O pipeline le daqui, e quem roda a verificacao na propria maquina
@@ -7,16 +7,34 @@
 #
 # **Versao E sha256.** So a versao nao basta — uma tag pode ser movida, e no dia
 # em que for, o mesmo contrato passa a ser julgado por outro criterio sem que
-# nada aqui tenha mudado. O sha256 e publicado nas notas do release.
+# nada aqui tenha mudado. O sha256 e publicado nas notas de cada release.
 #
-# O pacote traz o binario **e** o vocabulario (glossario e catalogo LGPD). Por
-# isso subir de versao pode mudar a classificacao de um campo sem que nenhum
-# contrato mude — e por isso subir de versao e um pull request, revisado como
-# qualquer outro, e nao um efeito de alguem ter publicado algo em outro lugar.
+# Subir de versao pode reclassificar campos sem que nenhum contrato mude. Por
+# isso subir e um pull request, revisado como qualquer outro, e nao um efeito de
+# alguem ter publicado algo em outro lugar.
 #
 # Formato: KEY=valor, sem espacos. E lido por `sh` e despejado no ambiente do
 # job; qualquer coisa mais elaborada exigiria um parser dos dois lados.
 
+# --- A ferramenta: que codigo julga ---------------------------------------
 HARNESS_REPO=andrelaf/harness-odcs
-HARNESS_VERSAO=v0.7.0
-HARNESS_SHA256=70dafc8fba253677ebaf016f02e12aa91ad858aa6c44e1a2f972d5b0fee7c1b7
+HARNESS_VERSAO=v0.8.0
+HARNESS_SHA256=47a49ee3cbaf106fd0ee53deaf297f1dccb9eb59aeddf8841993baec4bc8e694
+
+# --- O criterio: sob qual vocabulario -------------------------------------
+#
+# Ate `v0.7.0` o vocabulario vinha dentro do pacote da ferramenta, e por isso
+# nao havia pin proprio: cadastrar um termo exigia compilar Rust e publicar um
+# binario. A partir de `v0.8.0` o pacote **nao carrega mais o vocabulario**, e
+# estas tres linhas passam a ser obrigatorias — sem elas o harness nao acha o
+# glossario e para.
+#
+# Pin separado porque e outra pergunta de auditoria e outra cadencia: um termo
+# novo no glossario nao deveria exigir um binario novo, e uma correcao no
+# binario nao deveria mexer no criterio.
+#
+# No dia em que o vocabulario ganhar repositorio proprio — com dono proprio, que
+# e o ponto — muda so a primeira destas tres linhas.
+HARNESS_VOCAB_REPO=andrelaf/harness-odcs
+HARNESS_VOCAB_VERSAO=vocab-v1.1.0
+HARNESS_VOCAB_SHA256=e7fd69cdea6b9fe70dd0143727fc05e2cca514ed59f08091b4da4698a45fbf7c
