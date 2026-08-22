@@ -2,7 +2,6 @@ apiVersion: v3.1.0
 kind: DataContract
 id: pedidos
 name: Pedidos (colecao MongoDB sintetica)
-version: 1.0.0
 status: draft
 description:
   purpose: Colecao sintetica de pedidos em MongoDB, com documento aninhado, para exercitar a cobertura do harness sobre estruturas nao planas.
